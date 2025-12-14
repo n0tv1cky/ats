@@ -327,80 +327,153 @@ This document outlines the architecture for an Application Tracking System (ATS)
 - expires_at (index)
 - user_id + revoked (composite index)
 
-## 5. Backend Architecture
+## 5. Project Structure
 
-### 5.1 Directory Structure
+### 5.1 Root Directory Structure
 
 ```
-backend/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                 # FastAPI application entry point
-│   ├── config.py               # Configuration management
-│   ├── dependencies.py         # Dependency injection
+.
+├── services/
+│   ├── backend/
+│   │   ├── src/
+│   │   │   └── v1/
+│   │   │       ├── __init__.py
+│   │   │       ├── api/              # API endpoints
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── auth.py
+│   │   │       │   ├── candidates.py
+│   │   │       │   ├── resumes.py
+│   │   │       │   ├── interviews.py
+│   │   │       │   ├── feedback.py
+│   │   │       │   └── search.py
+│   │   │       ├── core/             # Core business logic
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── security.py   # Authentication & authorization
+│   │   │       │   ├── resume_parser.py
+│   │   │       │   ├── ai_service.py # AI integration (Phase 2)
+│   │   │       │   ├── interview_manager.py
+│   │   │       │   └── notification_service.py
+│   │   │       ├── services/         # External service integrations
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── google_workspace.py
+│   │   │       │   ├── email_service.py
+│   │   │       │   ├── storage_service.py
+│   │   │       │   └── backup_service.py
+│   │   │       ├── models/           # SQLAlchemy models
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── user.py
+│   │   │       │   ├── candidate.py
+│   │   │       │   ├── interview.py
+│   │   │       │   ├── feedback.py
+│   │   │       │   └── rejection.py
+│   │   │       ├── schemas/          # Pydantic schemas
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── user.py
+│   │   │       │   ├── candidate.py
+│   │   │       │   ├── interview.py
+│   │   │       │   └── feedback.py
+│   │   │       ├── db/               # Database
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── base.py
+│   │   │       │   ├── session.py
+│   │   │       │   └── migrations/   # Alembic migrations
+│   │   │       ├── config.py         # Configuration management
+│   │   │       ├── dependencies.py   # Dependency injection
+│   │   │       └── utils/            # Utility functions
+│   │   │           ├── __init__.py
+│   │   │           ├── validators.py
+│   │   │           └── helpers.py
+│   │   └── main.py                   # FastAPI application entry point
 │   │
-│   ├── api/                    # API endpoints
-│   │   ├── __init__.py
-│   │   ├── v1/
-│   │   │   ├── __init__.py
-│   │   │   ├── auth.py
-│   │   │   ├── candidates.py
-│   │   │   ├── resumes.py
-│   │   │   ├── interviews.py
-│   │   │   ├── feedback.py
-│   │   │   └── search.py
-│   │
-│   ├── core/                   # Core business logic
-│   │   ├── __init__.py
-│   │   ├── security.py         # Authentication & authorization
-│   │   ├── resume_parser.py   # AI resume parsing logic
-│   │   ├── ai_service.py      # AI integration (salary prediction, YOE, rating)
-│   │   ├── interview_manager.py
-│   │   └── notification_service.py
-│   │
-│   ├── services/               # External service integrations
-│   │   ├── __init__.py
-│   │   ├── google_workspace.py # Google Calendar, Drive integration
-│   │   ├── email_service.py
-│   │   ├── storage_service.py  # S3/GCS
-│   │   └── backup_service.py
-│   │
-│   ├── models/                 # SQLAlchemy models
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   ├── candidate.py
-│   │   ├── interview.py
-│   │   ├── feedback.py
-│   │   └── rejection.py
-│   │
-│   ├── schemas/                # Pydantic schemas
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   ├── candidate.py
-│   │   ├── interview.py
-│   │   └── feedback.py
-│   │
-│   ├── db/                     # Database
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   ├── session.py
-│   │   └── migrations/         # Alembic migrations
-│   │
-│   └── utils/                  # Utility functions
-│       ├── __init__.py
-│       ├── validators.py
-│       └── helpers.py
+│   └── frontend/
+│       ├── public/
+│       │   └── assets/
+│       ├── src/
+│       │   ├── app/                  # Next.js 13+ app directory
+│       │   │   ├── layout.js
+│       │   │   ├── page.js           # Dashboard
+│       │   │   ├── auth/
+│       │   │   │   └── page.js       # OAuth sign-in
+│       │   │   ├── candidates/
+│       │   │   │   ├── page.js        # Candidate list
+│       │   │   │   ├── [id]/
+│       │   │   │   │   └── page.js   # Candidate profile
+│       │   │   │   └── upload/
+│       │   │   │       └── page.js    # Batch upload
+│       │   │   ├── interviews/
+│       │   │   │   ├── page.js       # Interview schedule
+│       │   │   │   └── [id]/
+│       │   │   │       └── page.js   # Interview details
+│       │   │   └── search/
+│       │   │       └── page.js       # Advanced search
+│       │   │
+│       │   ├── components/           # Reusable components
+│       │   │   ├── layout/
+│       │   │   │   ├── Header.js
+│       │   │   │   ├── Sidebar.js
+│       │   │   │   └── Footer.js
+│       │   │   ├── candidates/
+│       │   │   │   ├── CandidateCard.js
+│       │   │   │   ├── CandidateProfile.js
+│       │   │   │   ├── ResumeUploader.js
+│       │   │   │   └── CandidateSearch.js
+│       │   │   ├── interviews/
+│       │   │   │   ├── InterviewCard.js
+│       │   │   │   ├── InterviewScheduler.js
+│       │   │   │   ├── FeedbackForm.js
+│       │   │   │   └── RoundTimeline.js
+│       │   │   └── common/
+│       │   │       ├── Button.js
+│       │   │       ├── Input.js
+│       │   │       ├── Modal.js
+│       │   │       └── LoadingSpinner.js
+│       │   │
+│       │   ├── lib/                  # Utility libraries
+│       │   │   ├── api.js            # API client
+│       │   │   ├── auth.js           # Authentication helpers
+│       │   │   └── utils.js          # Helper functions
+│       │   │
+│       │   ├── hooks/                # Custom React hooks
+│       │   │   ├── useAuth.js
+│       │   │   ├── useCandidates.js
+│       │   │   └── useInterviews.js
+│       │   │
+│       │   ├── context/              # React Context
+│       │   │   ├── AuthContext.js
+│       │   │   └── ThemeContext.js
+│       │   │
+│       │   └── styles/               # Global styles
+│       │       └── globals.css
+│       │
+│       ├── package.json
+│       ├── next.config.js
+│       └── README.md
 │
-├── tests/                      # Unit and integration tests
-├── requirements.txt
-├── env_files/                  # Environment configuration files
-│   ├── .env.dev               # Development environment variables
-│   └── .env.prod              # Production environment variables
-└── README.md
+├── docker-compose.prod.yaml          # Production Docker Compose
+├── docker-compose.dev.yaml           # Development Docker Compose
+├── env_files/                        # Environment configuration files
+│   ├── .env.dev                      # Development environment variables
+│   └── .env.prod                     # Production environment variables
+├── docs/                             # Documentation
+├── tests/                            # Integration and E2E tests
+├── output/                           # Build outputs and generated files
+├── scripts/                          # Utility scripts
+├── Makefile                          # Build and deployment commands
+└── README.md                         # Project documentation
 
 ```
 
-### 5.2 Key Backend Components
+## 6. Backend Architecture
+
+### 6.1 Backend Directory Structure
+
+The backend follows the structure under `services/backend/`:
+
+- `main.py` is the FastAPI application entry point at the root of `services/backend/`
+- All source code is organized under `src/v1/` for API version 1
+- Future API versions can be added as `src/v2/`, `src/v3/`, etc.
+
+### 6.2 Key Backend Components
 
 ### Resume Parser Service
 
@@ -449,78 +522,13 @@ class NotificationService:
 
 ```
 
-## 6. Frontend Architecture
+## 7. Frontend Architecture
 
-### 6.1 Directory Structure
+### 7.1 Frontend Directory Structure
 
-```
-frontend/
-├── public/
-│   └── assets/
-├── src/
-│   ├── app/                    # Next.js 13+ app directory
-│   │   ├── layout.js
-│   │   ├── page.js            # Dashboard
-│   │   ├── auth/
-│   │   │   └── page.js        # OAuth sign-in
-│   │   ├── candidates/
-│   │   │   ├── page.js        # Candidate list
-│   │   │   ├── [id]/
-│   │   │   │   └── page.js    # Candidate profile
-│   │   │   └── upload/
-│   │   │       └── page.js    # Batch upload
-│   │   ├── interviews/
-│   │   │   ├── page.js        # Interview schedule
-│   │   │   └── [id]/
-│   │   │       └── page.js    # Interview details
-│   │   └── search/
-│   │       └── page.js        # Advanced search
-│   │
-│   ├── components/             # Reusable components
-│   │   ├── layout/
-│   │   │   ├── Header.js
-│   │   │   ├── Sidebar.js
-│   │   │   └── Footer.js
-│   │   ├── candidates/
-│   │   │   ├── CandidateCard.js
-│   │   │   ├── CandidateProfile.js
-│   │   │   ├── ResumeUploader.js
-│   │   │   └── CandidateSearch.js
-│   │   ├── interviews/
-│   │   │   ├── InterviewCard.js
-│   │   │   ├── InterviewScheduler.js
-│   │   │   ├── FeedbackForm.js
-│   │   │   └── RoundTimeline.js
-│   │   └── common/
-│   │       ├── Button.js
-│   │       ├── Input.js
-│   │       ├── Modal.js
-│   │       └── LoadingSpinner.js
-│   │
-│   ├── lib/                    # Utility libraries
-│   │   ├── api.js             # API client
-│   │   ├── auth.js            # Authentication helpers
-│   │   └── utils.js           # Helper functions
-│   │
-│   ├── hooks/                  # Custom React hooks
-│   │   ├── useAuth.js
-│   │   ├── useCandidates.js
-│   │   └── useInterviews.js
-│   │
-│   ├── context/                # React Context
-│   │   ├── AuthContext.js
-│   │   └── ThemeContext.js
-│   │
-│   └── styles/                 # Global styles
-│       └── globals.css
-│
-├── package.json
-├── next.config.js
-└── README.md
+The frontend follows the structure under `services/frontend/` as shown in the root directory structure above.
 
-```
-
-### 6.2 Key Frontend Components
+### 7.2 Key Frontend Components
 
 ### Resume Upload Flow
 
@@ -553,9 +561,9 @@ frontend/
 - Objective rating display
 - Export functionality
 
-## 7. API Endpoints
+## 8. API Endpoints
 
-### 7.1 Health & Readiness
+### 8.1 Health & Readiness
 
 ```
 GET    /health                         # Health check endpoint
@@ -572,7 +580,7 @@ GET    /ready                          # Readiness check endpoint
 }
 ```
 
-### 7.2 Authentication
+### 8.2 Authentication
 
 ```
 POST   /api/v1/auth/login              # OAuth login
@@ -629,7 +637,7 @@ GET    /api/v1/auth/me                 # Get current user
 - View candidate profiles for assigned interviews
 - Update interview status (completed, cancelled)
 
-### 7.3 Candidates
+### 8.3 Candidates
 
 ```
 POST   /api/v1/candidates/upload       # Batch upload resumes
@@ -699,14 +707,14 @@ GET    /api/v1/candidates/{id}/notes   # Get candidate notes
 - `RATE_LIMIT_EXCEEDED`: Too many requests
 - `INTERNAL_ERROR`: Server error
 
-### 7.4 Resumes
+### 8.4 Resumes
 
 ```
 POST   /api/v1/resumes/parse           # Parse single resume
 GET    /api/v1/resumes/{id}/download   # Download resume file (signed URL)
 ```
 
-### 7.5 Interviews
+### 8.5 Interviews
 
 ```
 POST   /api/v1/interviews              # Schedule interview
@@ -719,7 +727,7 @@ GET    /api/v1/interviews/{id}/notes   # Fetch meeting notes
 POST   /api/v1/interviews/sync-calendar # Sync calendar events (admin only)
 ```
 
-### 7.6 Buckets
+### 8.6 Buckets
 
 ```
 GET    /api/v1/buckets                 # List all buckets
@@ -728,7 +736,7 @@ PUT    /api/v1/buckets/{id}            # Update bucket (admin/HR only)
 DELETE /api/v1/buckets/{id}            # Delete bucket (admin only)
 ```
 
-### 7.7 Skills
+### 8.7 Skills
 
 ```
 GET    /api/v1/skills                  # List all skills (paginated)
@@ -738,7 +746,7 @@ POST   /api/v1/candidates/{id}/skills  # Add skills to candidate
 DELETE /api/v1/candidates/{id}/skills/{skill_id} # Remove skill from candidate
 ```
 
-### 7.8 Notifications
+### 8.8 Notifications
 
 ```
 GET    /api/v1/notifications           # Get user notifications (paginated)
@@ -748,21 +756,21 @@ PUT    /api/v1/notifications/read-all  # Mark all as read
 DELETE /api/v1/notifications/{id}      # Delete notification
 ```
 
-### 7.9 Audit Logs
+### 8.9 Audit Logs
 
 ```
 GET    /api/v1/audit-logs              # Get audit logs (admin only, paginated)
 GET    /api/v1/audit-logs/{resource_type}/{resource_id} # Get logs for resource
 ```
 
-### 7.10 API Versioning
+### 8.10 API Versioning
 
 - Current version: `v1`
 - Version specified in URL path: `/api/v1/...`
 - Backward compatibility maintained for 6 months after new version release
 - Deprecation warnings in response headers: `X-API-Deprecated: true`, `X-API-Sunset-Date: 2025-05-12`
 
-### 7.11 Feedback
+### 8.11 Feedback
 
 ```
 POST   /api/v1/feedback                # Submit interview feedback
@@ -770,9 +778,9 @@ GET    /api/v1/feedback/{interview_id} # Get feedback for interview
 PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 ```
 
-## 8. Key Workflows
+## 9. Key Workflows
 
-### 8.1 Resume Upload & Processing Workflow
+### 9.1 Resume Upload & Processing Workflow
 
 1. User signs in with OAuth
 2. User selects bucket category and uploads multiple resumes
@@ -789,7 +797,7 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 8. Backup profile to Google Drive
 9. Create audit log entry for upload action
 
-### 8.2 Interview Scheduling Workflow
+### 9.2 Interview Scheduling Workflow
 
 1. Interviewer views eligible candidates
 2. Clicks on candidate profile
@@ -814,7 +822,7 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 12. Stores interview record in database with `calendar_event_id`
 13. Records `calendar_synced_at` timestamp
 
-### 8.3 Feedback & Decision Workflow
+### 9.3 Feedback & Decision Workflow
 
 1. After interview, interviewer submits feedback form
 2. Scores entered for:
@@ -832,7 +840,7 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
    - Move to next round
    - Repeat scheduling workflow
 
-### 8.4 Reapplication Alert Workflow
+### 9.4 Reapplication Alert Workflow
 
 **Note: This feature is planned for Phase 2**
 
@@ -844,9 +852,9 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
    - Show previous interview history
    - Allow decision to proceed or auto-reject
 
-## 9. Integration Requirements
+## 10. Integration Requirements
 
-### 9.1 Google Workspace Integration
+### 10.1 Google Workspace Integration
 
 - **Google Calendar API**: Create events, manage invites
   - Calendar sync runs every 2 hours (configurable via `CALENDAR_SYNC_INTERVAL` env var)
@@ -860,7 +868,7 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 - **Google Drive API**: Store backups, fetch meeting notes
 - **Google OAuth 2.0**: User authentication
 
-### 9.2 AI/ML Services
+### 10.2 AI/ML Services
 
 **Note: AI features are planned for Phase 2**
 
@@ -871,14 +879,14 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
   - Resume rating and scoring
   - Skills extraction and categorization
 
-### 9.3 Email Services
+### 10.3 Email Services
 
 - **SendGrid/AWS SES**: Interview invites, rejection notices
 - **Template Management**: Predefined email templates
 
-## 10. Security Considerations
+## 11. Security Considerations
 
-### 10.1 Data Protection
+### 11.1 Data Protection
 
 - HTTPS for all API communications
 - OAuth 2.0 for authentication
@@ -887,14 +895,14 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 - Soft deletes for data retention and recovery
 - Audit logging for all data access and modifications
 
-### 10.2 File Security
+### 11.2 File Security
 
 - Virus scanning on upload
 - File type validation (PDF, DOCX only)
 - Signed URLs for resume downloads
 - Automatic file expiration in temporary storage
 
-### 10.3 Privacy Compliance
+### 11.3 Privacy Compliance
 
 - GDPR compliance for candidate data
 - Data retention policies (configurable per data type)
@@ -902,9 +910,9 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 - Comprehensive audit logs for data access and modifications
 - Audit logs include: user, action, resource, IP address, user agent, timestamp
 
-## 11. Performance Optimization
+## 12. Performance Optimization
 
-### 11.1 Backend
+### 12.1 Backend
 
 - Database indexing on frequently queried fields (see schema section for index details)
 - Redis caching for search results (optional, Phase 2)
@@ -913,7 +921,7 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 - Rate limiting on API endpoints (100 requests/minute per user)
 - Pagination on all list endpoints
 
-### 11.2 Frontend
+### 12.2 Frontend
 
 - Next.js SSR for initial page load
 - Image optimization with Next.js Image
@@ -921,22 +929,22 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 - Client-side caching with SWR/React Query
 - Pagination for large datasets
 
-### 11.3 Storage
+### 12.3 Storage
 
 - CDN for static assets
 - Compressed file storage
 - Lazy loading for resume previews
 
-## 12. Monitoring & Logging
+## 13. Monitoring & Logging
 
-### 12.1 Application Monitoring
+### 13.1 Application Monitoring
 
 - Error tracking (Sentry)
 - Performance monitoring (New Relic/DataDog)
 - API request logging
 - Database query performance tracking
 
-### 12.2 Business Metrics
+### 13.2 Business Metrics
 
 - Number of resumes processed
 - Average time per interview round
@@ -944,9 +952,9 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 - Interviewer feedback patterns
 - Reapplication frequency
 
-## 13. Deployment Strategy
+## 14. Deployment Strategy
 
-### 13.1 Infrastructure
+### 14.1 Infrastructure
 
 - **Backend**: AWS EC2/ECS or Google Cloud Run
 - **Frontend**: Vercel or AWS Amplify
@@ -954,14 +962,14 @@ PUT    /api/v1/feedback/{id}           # Update feedback (before decision)
 - **Storage**: AWS S3 or Google Cloud Storage
 - **CDN**: CloudFront or Cloud CDN
 
-### 13.2 CI/CD Pipeline
+### 14.2 CI/CD Pipeline
 
 - GitHub Actions or GitLab CI
 - Automated testing on PR
 - Staging environment for QA
 - Blue-green deployment for zero downtime
 
-### 13.3 Environment Management
+### 14.3 Environment Management
 
 - Development, Staging, Production environments
 - Environment-specific configuration files:
@@ -1023,7 +1031,7 @@ ADMIN_PASSWORD=change-me-in-production
 ADMIN_USERNAME=admin
 ```
 
-### 13.4 Initial Setup
+### 14.4 Initial Setup
 
 **Database Initialization:**
 
@@ -1040,9 +1048,9 @@ ADMIN_USERNAME=admin
 - Must change password on first login (if password-based auth is used)
 - Can be created via database migration or startup script
 
-## 14. Data Validation Rules
+## 15. Data Validation Rules
 
-### 14.1 Candidate Data Validation
+### 15.1 Candidate Data Validation
 
 - **Email**: Valid email format, unique per candidate
 - **Phone Number**: International format supported (E.164 recommended)
@@ -1054,7 +1062,7 @@ ADMIN_USERNAME=admin
 - **Source**: Enum (linkedin, naukri, referral, other)
 - **Resume File**: PDF or DOCX, max 10MB, virus scanned
 
-### 14.2 Interview Data Validation
+### 15.2 Interview Data Validation
 
 - **Round Number**: Integer, 0-4, must be sequential (can't skip rounds)
 - **Status**: Enum (scheduled, completed, cancelled)
@@ -1066,7 +1074,7 @@ ADMIN_USERNAME=admin
   - `cancelled` → `scheduled` (reschedule)
   - Cannot transition from `completed` to `scheduled` (create new round instead)
 
-### 14.3 Feedback Data Validation
+### 15.3 Feedback Data Validation
 
 - **Scores**: Integer, 0-100 range for all score fields
 - **Overall Rating**: Calculated automatically, cannot be set manually
@@ -1079,7 +1087,7 @@ ADMIN_USERNAME=admin
   - Communication: 20%
   - Total must equal 100%
 
-### 14.4 User Data Validation
+### 15.4 User Data Validation
 
 - **Email**: Valid email format, unique, required
 - **Username**: Alphanumeric + underscore, 3-50 characters, unique
@@ -1087,7 +1095,7 @@ ADMIN_USERNAME=admin
 - **OAuth Provider**: Required if OAuth authentication used
 - **OAuth ID**: Required if OAuth authentication used, unique per provider
 
-### 14.5 Status Transition Rules
+### 15.5 Status Transition Rules
 
 **Candidate Status:**
 
@@ -1102,9 +1110,9 @@ ADMIN_USERNAME=admin
 - Cannot schedule round N+1 if round N is not completed
 - Round 0 (Resume Screening) has no interview, just status change
 
-## 15. Backup and Recovery Strategy
+## 16. Backup and Recovery Strategy
 
-### 15.1 Database Backup
+### 16.1 Database Backup
 
 - **Frequency**:
   - Full backup: Daily at 2:00 AM UTC
@@ -1120,7 +1128,7 @@ ADMIN_USERNAME=admin
 - **Backup Format**: PostgreSQL dump (pg_dump)
 - **Verification**: Automated restore test weekly
 
-### 15.2 File Storage Backup
+### 16.2 File Storage Backup
 
 - **Resume Files**:
   - Synced to Google Drive daily
@@ -1131,13 +1139,13 @@ ADMIN_USERNAME=admin
   - Backup via Google Drive native backup
   - Retention: 3 years
 
-### 15.3 Application Data Backup
+### 16.3 Application Data Backup
 
 - **Configuration**: Version controlled in Git
 - **Environment Variables**: Stored in secrets manager
 - **Database Migrations**: Version controlled in Git
 
-### 15.4 Recovery Procedures
+### 16.4 Recovery Procedures
 
 - **Point-in-Time Recovery**: Available for last 30 days
 - **Full Restore**:
@@ -1149,16 +1157,16 @@ ADMIN_USERNAME=admin
 - **Disaster Recovery Time Objective (RTO)**: 4 hours
 - **Disaster Recovery Point Objective (RPO)**: 1 hour (max data loss)
 
-### 15.5 Backup Monitoring
+### 16.5 Backup Monitoring
 
 - Automated backup verification
 - Alert on backup failures
 - Daily backup status report
 - Monthly backup restore drill
 
-## 16. Future Enhancements
+## 17. Future Enhancements
 
-### 16.1 Phase 2 Features
+### 17.1 Phase 2 Features
 
 - **AI Integration**:
   - OpenAI gpt-4o-mini for resume parsing
@@ -1178,7 +1186,7 @@ ADMIN_USERNAME=admin
 - Bulk email campaigns
 - Integration with job boards
 
-### 16.2 Phase 3 Features
+### 17.2 Phase 3 Features
 
 - Machine learning for candidate matching
 - Predictive analytics for hiring success
@@ -1187,9 +1195,9 @@ ADMIN_USERNAME=admin
 - Collaborative hiring workflows
 - Multi-language support
 
-## 17. Audit Trail Implementation
+## 18. Audit Trail Implementation
 
-### 17.1 Audit Logging
+### 18.1 Audit Logging
 
 All significant actions are logged to the `audit_logs` table:
 
@@ -1215,7 +1223,7 @@ All significant actions are logged to the `audit_logs` table:
 - `user_agent`: User agent string from request
 - `created_at`: Timestamp of the action
 
-### 17.2 Audit Log Access
+### 18.2 Audit Log Access
 
 - Admin users can view all audit logs
 - HR users can view audit logs for candidates and interviews
@@ -1223,15 +1231,15 @@ All significant actions are logged to the `audit_logs` table:
 - Audit logs are immutable (no updates or deletes)
 - Retention: 7 years (compliance requirement)
 
-### 17.3 Audit Log Queries
+### 18.3 Audit Log Queries
 
 - Search by user, action, resource type, date range
 - Export audit logs for compliance reporting
 - Real-time monitoring of sensitive actions (admin alerts)
 
-## 18. Soft Delete Implementation
+## 19. Soft Delete Implementation
 
-### 18.1 Soft Delete Strategy
+### 19.1 Soft Delete Strategy
 
 All major entities support soft deletes using `deleted_at` timestamp field:
 
@@ -1250,16 +1258,16 @@ All major entities support soft deletes using `deleted_at` timestamp field:
 - Hard delete available for admin users (permanent removal)
 - Soft deleted records retained for 7 years before hard delete
 
-### 18.2 Query Behavior
+### 19.2 Query Behavior
 
 - Default queries exclude soft-deleted records
 - Include deleted records: Add `include_deleted=true` query parameter (admin only)
 - Restore deleted record: PUT request with `deleted_at: null`
 - Hard delete: DELETE request with `hard_delete=true` parameter (admin only)
 
-## 19. Appendix
+## 20. Appendix
 
-### 19.1 Technology Versions
+### 20.1 Technology Versions
 
 - Python: 3.11+
 - FastAPI: 0.104+
@@ -1268,7 +1276,7 @@ All major entities support soft deletes using `deleted_at` timestamp field:
 - PostgreSQL: 15+
 - Node.js: 18+
 
-### 19.2 Key Dependencies
+### 20.2 Key Dependencies
 
 **Backend:**
 
