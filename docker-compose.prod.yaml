@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: ats_db_prod
+    environment:
+      POSTGRES_USER: ${DB_USER:-ats_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-ats_db}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ats_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ats_network
+
+  backend:
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: ats_backend_prod
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-ats_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-ats_db}
+      - ENVIRONMENT=production
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./env_files/.env.prod
+    restart: unless-stopped
+    networks:
+      - ats_network
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: ats_frontend_prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${API_URL:-http://localhost:8000/api/v1}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - ats_network
+
+volumes:
+  postgres_data_prod:
+
+networks:
+  ats_network:
+    driver: bridge
+
