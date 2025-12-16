@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     
     # JWT Authentication
     # Keep this separate from any API key; rotate for production
-    JWT_SECRET_KEY: str  # Required - must be set via environment variable  # example; replace via environment
+    JWT_SECRET_KEY: str  # Required - must be set via environment variable
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
